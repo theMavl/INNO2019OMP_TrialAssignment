@@ -13,6 +13,7 @@ int load_image(image *image, const char *filename) {
     image->width = 0;
     image->height = 0;
     image->color_range = 0;
+    char comment_block = 0;
 
     FILE *file = fopen(filename, "r");
 
@@ -52,6 +53,16 @@ int load_image(image *image, const char *filename) {
     char **end = malloc(sizeof(char));
     while (1) {
         c = getc(file);
+        if (c == '#') {
+            comment_block = 1;
+            continue;
+        }
+        if (c == '\n' && comment_block) {
+            comment_block = 0;
+            continue;
+        }
+        if (comment_block)
+            continue;
         if (c == ' ' || c == '\n') {
             if (found) {
                 if (image->width == 0) {
