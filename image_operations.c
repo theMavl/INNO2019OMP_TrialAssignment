@@ -1,20 +1,10 @@
 //
 // Created by mavl on 16.04.19.
 //
-#ifndef CONVERTER_H
-#define CONVERTER_H
-
 #include <stdlib.h>
-#include "converter.h"
 
-#endif
-
-#ifndef FS_OPERATIONS_H
-#define FS_OPERATIONS_H
-
+#include "image_operations.h"
 #include "fs_operations.h"
-
-#endif
 
 #include <math.h>
 

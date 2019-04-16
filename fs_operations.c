@@ -6,20 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef CONVERTER_H
-#define CONVERTER_H
-
-#include "converter.h"
-
-#endif
-
-#ifndef FS_OPERATIONS_H
-#define FS_OPERATIONS_H
-
+#include "image_operations.h"
 #include "fs_operations.h"
-
-#endif
-
 
 int load_image(image *image, const char *filename) {
     image->width = 0;
@@ -33,7 +21,6 @@ int load_image(image *image, const char *filename) {
         return 1;
     }
 
-    char ppm_format[2];
     int c;
 
     // Parse header
@@ -101,20 +88,20 @@ int load_image(image *image, const char *filename) {
     return 0;
 }
 
-int write_image(image *image, const char *filename) {
+int write_image(image *out_image, const char *filename) {
     FILE *file = fopen(filename, "w");
 
     if (file == NULL) {
         fprintf(stderr, "I/O error\n");
         return 2;
     }
-    switch (image->format) {
+    switch (out_image->format) {
 //        case P3:
 //            break;
         case P6:
-            fprintf(file, "P%d\n%d %d\n%d\n", image->format, image->width, image->height, image->color_range);
-            for (int i = 0; i < image->width * image->height * 3; i++) {
-                fprintf(file, "%c", image->matrix[i]);
+            fprintf(file, "P%d\n%d %d\n%d\n", out_image->format, out_image->width, out_image->height, out_image->color_range);
+            for (int i = 0; i < out_image->width * out_image->height * 3; i++) {
+                fprintf(file, "%c", out_image->matrix[i]);
             }
             break;
         default:

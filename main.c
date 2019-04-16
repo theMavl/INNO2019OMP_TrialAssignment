@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "converter.h"
-#include "fs_operations.h"
 #include "image_operations.h"
+#include "fs_operations.h"
 
 int main() {
     image *in_image = malloc(sizeof(image));
