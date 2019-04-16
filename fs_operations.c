@@ -38,6 +38,7 @@ int load_image(image *image, const char *filename) {
         return 3;
     } else if (c == '6') {
         image->format = P6;
+        image->channels = 3;
     } else {
         printf("Error: Unsupported format");
         return 1;
@@ -77,6 +78,11 @@ int load_image(image *image, const char *filename) {
     // Read pixel data
     for (int i = 0; i < matrix_size; i++) {
         c = getc(file);
+        if (c == EOF) {
+            fprintf(stderr, "Unexpected End of File\n");
+            return 2;
+        }
+
         if (c == ' ' || c == '\n') {
             continue;
         } else {
@@ -99,9 +105,11 @@ int write_image(image *out_image, const char *filename) {
 //        case P3:
 //            break;
         case P6:
-            fprintf(file, "P%d\n%d %d\n%d\n", out_image->format, out_image->width, out_image->height, out_image->color_range);
-            for (int i = 0; i < out_image->width * out_image->height * 3; i++) {
-                fprintf(file, "%c", out_image->matrix[i]);
+            fprintf(file, "P%d\n%d %d\n%d\n", out_image->format, out_image->width, out_image->height,
+                    out_image->color_range);
+            for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
+                for (int j = out_image->channels; j <= 3; j++)
+                    fprintf(file, "%c", out_image->matrix[i]);
             }
             break;
         default:

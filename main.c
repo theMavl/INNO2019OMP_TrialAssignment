@@ -13,7 +13,7 @@ int main() {
     }
 
     image *gray_image = to_gray(in_image);
-    write_image(in_image, "../sample_images/pop_grey.PPM");
-
+    write_image(gray_image, "../sample_images/pop_grey.PPM");
+    write_image(in_image, "../sample_images/pop_replica.PPM");
     return 0;
 }

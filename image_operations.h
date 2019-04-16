@@ -11,6 +11,7 @@ typedef struct _image {
     unsigned int height;
     unsigned char color_range;
     unsigned char *matrix;
+    unsigned char channels;
 } image;
 
 
