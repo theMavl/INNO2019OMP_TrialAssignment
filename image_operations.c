@@ -17,7 +17,7 @@ image *to_gray(image *original_image) {
 
     long matrix_size = gray_image->height * gray_image->width;
 
-    gray_image->matrix = malloc(sizeof(char) * matrix_size);
+    gray_image->matrix = malloc(sizeof(char) * matrix_size * 3);
 
     unsigned char *gray_matrix_ptr = gray_image->matrix;
     unsigned char *rgb_matrix_ptr = original_image->matrix;
