@@ -8,6 +8,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #define get_matrix_value(_value, _image, _x, _y) do { \
     _value = _image->matrix[(_x)*_image->width+(_y)];\
@@ -21,8 +22,8 @@
 int *kernel_h;
 int *kernel_v;
 image *gray_image;
-image *conv_image_h;
-image *conv_image_v;
+//image *conv_image_h;
+//image *conv_image_v;
 image *cont_image;
 
 image *to_gray(image *original_image) {
@@ -49,7 +50,7 @@ image *to_gray(image *original_image) {
     return gray_image;
 }
 
-void convolve(int x, int y) {
+void process_pixel(int x, int y) {
     int sum_h = 0;
     int sum_v = 0;
     int sum_m = 0;
@@ -66,46 +67,58 @@ void convolve(int x, int y) {
             kernel_h_ptr++;
         }
     }
-    sum_m = (int) round(sqrt(sum_h * sum_h + sum_v + sum_v));
+    // TODO: Select abs or sqrt
+    // sum_m = (int) round(sqrt(sum_h * sum_h + sum_v * sum_v));
+    sum_m = abs(sum_h) + abs(sum_v);
 
     // Boundaries
     if (sum_h < 0) sum_h *= -1;
     if (sum_v < 0) sum_v *= -1;
-    if (sum_h > gray_image->color_range) sum_h = gray_image->color_range;
-    if (sum_v > gray_image->color_range) sum_v = gray_image->color_range;
+//    if (sum_h > gray_image->color_range) sum_h = gray_image->color_range;
+//    if (sum_v > gray_image->color_range) sum_v = gray_image->color_range;
     if (sum_m > gray_image->color_range) sum_m = gray_image->color_range;
 
-    set_matrix_value(sum_h, conv_image_h, x, y)
-    set_matrix_value(sum_v, conv_image_v, x, y)
+//    set_matrix_value(sum_h, conv_image_h, x, y)
+//    set_matrix_value(sum_v, conv_image_v, x, y)
     set_matrix_value(sum_m, cont_image, x, y)
 }
 
-int convolution(image *image_s, int kernel_1[], int kernel_2[], image *conv_image_1, image *conv_image_2,
-                image *cont_image_t) {
+void *process_line(void *arg) {
+    struct convolve_thread_parameters *p = (struct convolve_thread_parameters *) arg;
+    for (int x = p->start; x < p->end; x++) {
+        for (int y = 1; y < gray_image->width - 1; y++) {
+            process_pixel(x, y);
+        }
+    }
+    free(arg);
+}
+
+int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, image *conv_image_2,
+          image *cont_image_t) {
     if (image_s->channels != 1) {
-        fprintf(stderr, "Can not convolve multichannel images\n");
+        fprintf(stderr, "Can not process_pixel multichannel images\n");
         return 1;
     }
 
     // Publish variables so that threads can see them
     gray_image = image_s;
-    conv_image_h = conv_image_1;
-    conv_image_v = conv_image_2;
+//    conv_image_h = conv_image_1;
+//    conv_image_v = conv_image_2;
     cont_image = cont_image_t;
     kernel_h = kernel_1;
     kernel_v = kernel_2;
 
-    conv_image_h->height = gray_image->height;
-    conv_image_h->width = gray_image->width;
-    conv_image_h->format = gray_image->format;
-    conv_image_h->color_range = gray_image->color_range;
-    conv_image_h->channels = 1;
-
-    conv_image_v->height = gray_image->height;
-    conv_image_v->width = gray_image->width;
-    conv_image_v->format = gray_image->format;
-    conv_image_v->color_range = gray_image->color_range;
-    conv_image_v->channels = 1;
+//    conv_image_h->height = gray_image->height;
+//    conv_image_h->width = gray_image->width;
+//    conv_image_h->format = gray_image->format;
+//    conv_image_h->color_range = gray_image->color_range;
+//    conv_image_h->channels = 1;
+//
+//    conv_image_v->height = gray_image->height;
+//    conv_image_v->width = gray_image->width;
+//    conv_image_v->format = gray_image->format;
+//    conv_image_v->color_range = gray_image->color_range;
+//    conv_image_v->channels = 1;
 
     cont_image->height = gray_image->height;
     cont_image->width = gray_image->width;
@@ -114,15 +127,35 @@ int convolution(image *image_s, int kernel_1[], int kernel_2[], image *conv_imag
     cont_image->channels = 1;
 
     long matrix_size = gray_image->height * gray_image->width;
-    conv_image_h->matrix = malloc(sizeof(char) * matrix_size);
-    conv_image_v->matrix = malloc(sizeof(char) * matrix_size);
+//    conv_image_h->matrix = malloc(sizeof(char) * matrix_size);
+//    conv_image_v->matrix = malloc(sizeof(char) * matrix_size);
     cont_image->matrix = malloc(sizeof(char) * matrix_size);
 
-    for (int x = 1; x < conv_image_h->height - 1; x++) {
-        for (int y = 1; y < conv_image_v->width - 1; y++) {
-            convolve(x, y);
-        }
+    int image_division = gray_image->height / THREADS;
+    if (gray_image->height % THREADS > 0)
+        image_division++;
+
+    pthread_t threads[THREADS];
+    struct convolve_thread_parameters *p;
+
+
+
+    for (int i = 0; i < THREADS; i++) {
+        p = malloc(sizeof(struct convolve_thread_parameters));
+        p->start = image_division * i + 1;
+        p->end = p->start + image_division;
+        if (p->end >= gray_image->height) p->end = gray_image->height - 2;
+        pthread_create(&threads[i], NULL, process_line, (void *) p);
+        //printf("Launch thread %li for processing lines %d-%d\n", threads[i], p->start, p->end - 1);
     }
+
+    for (int i = 0; i < THREADS; i++) {
+        //printf("Wait for thread %li...\n", threads[i]);
+        pthread_join(threads[i], NULL);
+    }
+    //clock_t end = clock();
+    //double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    //printf("Done! Time spent: %f\n", time_spent);
     return 0;
 }
 

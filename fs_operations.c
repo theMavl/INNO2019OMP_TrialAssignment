@@ -100,8 +100,6 @@ int load_image(image *image, const char *filename) {
             image->matrix[i] = (unsigned char) c;
         }
     }
-
-    printf("Image loaded\n");
     return 0;
 }
 

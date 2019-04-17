@@ -16,9 +16,15 @@ typedef struct _image {
     unsigned char channels;
 } image;
 
+struct convolve_thread_parameters {
+    int start;
+    int end;
+};
+
 
 image *to_gray(image *original_image);
 
-int convolution(image *gray_image, int kernel_1[], int kernel_2[], image *conv_image_1, image *conv_image_2, image *cont_image);
+int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, image *conv_image_2,
+          image *cont_image_t);
 
 #endif
