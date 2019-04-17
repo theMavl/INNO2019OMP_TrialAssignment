@@ -62,8 +62,8 @@ void process_pixel(int x, int y) {
         for (int j = -1; j <= 1; j++) {
             get_matrix_value(value, gray_image, x + j, y + i);
             sum_v += value * *kernel_v_ptr;
-            kernel_v_ptr++;
             sum_h += value * *kernel_h_ptr;
+            kernel_v_ptr++;
             kernel_h_ptr++;
         }
     }
@@ -90,7 +90,7 @@ void *process_line(void *arg) {
             process_pixel(x, y);
         }
     }
-    free(arg);
+    //free(arg);
 }
 
 int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, image *conv_image_2,
@@ -136,16 +136,19 @@ int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, ima
         image_division++;
 
     pthread_t threads[THREADS];
-    struct convolve_thread_parameters *p;
+    struct convolve_thread_parameters *p = malloc(sizeof(struct convolve_thread_parameters) * THREADS);
 
-
-
+    // Allocating structures before starting threads gives boost in performance
     for (int i = 0; i < THREADS; i++) {
-        p = malloc(sizeof(struct convolve_thread_parameters));
+        p[i] = *(struct convolve_thread_parameters *) malloc(sizeof(struct convolve_thread_parameters));
         p->start = image_division * i + 1;
         p->end = p->start + image_division;
         if (p->end >= gray_image->height) p->end = gray_image->height - 2;
-        pthread_create(&threads[i], NULL, process_line, (void *) p);
+        //printf("Launch thread %li for processing lines %d-%d\n", threads[i], p->start, p->end - 1);
+    }
+
+    for (int i = 0; i < THREADS; i++) {
+        pthread_create(&threads[i], NULL, process_line, (void *) &p[i]);
         //printf("Launch thread %li for processing lines %d-%d\n", threads[i], p->start, p->end - 1);
     }
 
@@ -153,9 +156,6 @@ int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, ima
         //printf("Wait for thread %li...\n", threads[i]);
         pthread_join(threads[i], NULL);
     }
-    //clock_t end = clock();
-    //double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    //printf("Done! Time spent: %f\n", time_spent);
     return 0;
 }
 

@@ -5,7 +5,7 @@
 #ifndef IMAGE_OPERATIONS_H
 #define IMAGE_OPERATIONS_H
 
-#define THREADS 4
+#define THREADS 2
 
 typedef struct _image {
     unsigned char format;

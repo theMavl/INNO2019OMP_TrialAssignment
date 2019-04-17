@@ -10,15 +10,17 @@
 #include "fs_operations.h"
 
 int load_image(image *image, const char *filename) {
+    // TODO: Захендлить коменты после хедера
     image->width = 0;
     image->height = 0;
     image->color_range = 0;
     char comment_block = 0;
+    char header_is_done = 0;
 
     FILE *file = fopen(filename, "r");
 
     if (file == NULL) {
-        printf("Error: failed to open file");
+        fprintf(stderr, "Error: failed to open '%s'", filename);
         return 1;
     }
 
@@ -27,7 +29,7 @@ int load_image(image *image, const char *filename) {
     // Parse header
     c = getc(file);
     if (c != 'P') {
-        printf("Error: failed to parse PPM");
+        fprintf(stderr, "Error: failed to parse PPM");
         return 1;
     }
 
@@ -35,13 +37,13 @@ int load_image(image *image, const char *filename) {
 
     if (c == '3') {
         image->format = P3;
-        printf("Error: Unsupported format (P3)");
+        fprintf(stderr, "Error: Unsupported format (P3)");
         return 3;
     } else if (c == '6') {
         image->format = P6;
         image->channels = 3;
     } else {
-        printf("Error: Unsupported format");
+        fprintf(stderr, "Error: Unsupported format");
         return 1;
     }
 
@@ -86,9 +88,20 @@ int load_image(image *image, const char *filename) {
     long matrix_size = image->height * image->width * 3;
     image->matrix = malloc(sizeof(char) * matrix_size);
 
+
+
     // Read pixel data
     for (int i = 0; i < matrix_size; i++) {
         c = getc(file);
+
+        // Skip remaining comments that are after the header
+        if (!header_is_done && c == '#') {
+            do {
+                c = getc(file);
+            } while (c != '\n');
+        }
+        header_is_done = 1;
+
         if (c == EOF) {
             fprintf(stderr, "Unexpected End of File\n");
             return 2;
@@ -122,7 +135,7 @@ int write_image(image *out_image, const char *filename) {
             }
             break;
         default:
-            printf("Unsupported format\n");
+            fprintf(stderr, "Unsupported format\n");
             return 1;
     }
 
