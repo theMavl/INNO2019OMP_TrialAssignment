@@ -10,7 +10,6 @@
 #include "fs_operations.h"
 
 int load_image(image *image, const char *filename) {
-    // TODO: Захендлить коменты после хедера
     image->width = 0;
     image->height = 0;
     image->color_range = 0;

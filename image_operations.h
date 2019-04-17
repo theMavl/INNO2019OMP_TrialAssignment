@@ -5,7 +5,12 @@
 #ifndef IMAGE_OPERATIONS_H
 #define IMAGE_OPERATIONS_H
 
-#define THREADS 2
+#define SQROOT 0
+#define ABSOLUTE 1
+
+char MODE; // 0 = sqrt, 1 = abs
+int THREADS_N;
+char save_intermediate; // Define whether should a program store in memory intermediate images
 
 typedef struct _image {
     unsigned char format;
@@ -16,10 +21,10 @@ typedef struct _image {
     unsigned char channels;
 } image;
 
-struct convolve_thread_parameters {
+typedef struct _convolve_thread_parameters {
     int start;
     int end;
-};
+} convolve_thread_parameters;
 
 
 image *to_gray(image *original_image);
