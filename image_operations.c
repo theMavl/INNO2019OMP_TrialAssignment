@@ -19,8 +19,8 @@
 } while (0);
 
 // Global variables for threads
-int *kernel_h;
-int *kernel_v;
+int kernel_h[] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+int kernel_v[] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
 image *gray_image;
 image *conv_image_h;
 image *conv_image_v;
@@ -96,8 +96,7 @@ void *process_line(void *arg) {
     free(arg);
 }
 
-int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, image *conv_image_2,
-          image *cont_image_t) {
+int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_image_t) {
     if (image_s->channels != 1) {
         fprintf(stderr, "Can not process_pixel multichannel images\n");
         return 1;
@@ -106,8 +105,6 @@ int sobel(image *image_s, int *kernel_1, int *kernel_2, image *conv_image_1, ima
     // Publish variables so that threads can see them
     gray_image = image_s;
     cont_image = cont_image_t;
-    kernel_h = kernel_1;
-    kernel_v = kernel_2;
 
     long matrix_size = gray_image->height * gray_image->width;
 

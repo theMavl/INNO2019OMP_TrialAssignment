@@ -66,9 +66,6 @@ int main(int argc, char *argv[]) {
     time_spent = (double) (clock() - begin) / CLOCKS_PER_SEC;
     printf("to_gray time: %fs\n", time_spent);
 
-    int kernel_1[] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
-    int kernel_2[] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
-
     if (save_intermediate) {
         conv_image_h = malloc(sizeof(image));
         conv_image_v = malloc(sizeof(image));
@@ -76,7 +73,7 @@ int main(int argc, char *argv[]) {
     image *cont_image = malloc(sizeof(image));
 
     begin = clock();
-    sobel(gray_image, kernel_1, kernel_2, conv_image_h, conv_image_v, cont_image);
+    sobel(gray_image, conv_image_h, conv_image_v, cont_image);
     time_spent = (double) (clock() - begin) / CLOCKS_PER_SEC;
     printf("Sobel time: %fs\n", time_spent);
 
@@ -105,6 +102,5 @@ int main(int argc, char *argv[]) {
     }
     free(cont_image->matrix);
     free(cont_image);
-
     return 0;
 }
