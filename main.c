@@ -7,18 +7,23 @@
 #include "fs_operations.h"
 
 int main(int argc, char *argv[]) {
+    struct timespec start, finish, total_time_start, total_time_finish;
+    double elapsed;
+
     if (strcmp(argv[1], "--help") == 0) {
         printf("SYNOPSIS\n"
-               "\t\tconv SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMAGE_V]\n\n");
-        printf("OPTIONS\n\t\t-t threads_n\n\t\t\tNumber of threads\n\n"
-               "\t\t--abs\n\t\t\tUse absolute value for approximating gradient instead of square root "
-               "(absolute value is faster but might be less accurate)\n\n"
-               "\t\t-i DEST_IMAGE_H DEST_IMAGE_V\n\t\t\tSave intermediate images, i.e. the results of horizontal and vertical convolutions\n");
+               "\tconv SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMAGE_V]\n\n");
+        printf("OPTIONS\n\t-t threads_n\n\t\tNumber of threads\n\n"
+               "\t--abs\n\t\tUse absolute value for approximating gradient instead of square root\n"
+               "\t\t(absolute value is faster but might be less accurate)\n\n"
+               "\t-i DEST_IMAGE_H DEST_IMAGE_V\n\t\tSave intermediate images, i.e. the results of horizontal and vertical\n"
+               "\t\tconvolutions\n");
         return 0;
     }
 
     MODE = 0;       // Square root
     THREADS_N = 1;  // Single thread
+    save_intermediate = 0;
 
     char *filename_in = argv[1];
     char *filename_out = argv[2];
@@ -51,20 +56,25 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    clock_gettime(CLOCK_MONOTONIC, &total_time_start);
+
     image *in_image = malloc(sizeof(image));
 
-    clock_t begin = clock();
-    clock_t total_time = clock();
+    clock_gettime(CLOCK_MONOTONIC, &start);
     if (load_image(in_image, filename_in) != 0) {
         return 1;
     }
-    double time_spent = (double) (clock() - begin) / CLOCKS_PER_SEC;
-    printf("load time: %fs\n", time_spent);
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    elapsed = (finish.tv_sec - start.tv_sec);
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+    printf("load time: %fs\n", elapsed);
 
-    begin = clock();
+    clock_gettime(CLOCK_MONOTONIC, &start);
     image *gray_image = to_gray(in_image);
-    time_spent = (double) (clock() - begin) / CLOCKS_PER_SEC;
-    printf("to_gray time: %fs\n", time_spent);
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    elapsed = (finish.tv_sec - start.tv_sec);
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+    printf("to_gray time: %fs\n", elapsed);
 
     if (save_intermediate) {
         conv_image_h = malloc(sizeof(image));
@@ -72,23 +82,29 @@ int main(int argc, char *argv[]) {
     }
     image *cont_image = malloc(sizeof(image));
 
-    begin = clock();
+    clock_gettime(CLOCK_MONOTONIC, &start);
     sobel(gray_image, conv_image_h, conv_image_v, cont_image);
-    time_spent = (double) (clock() - begin) / CLOCKS_PER_SEC;
-    printf("Sobel time: %fs\n", time_spent);
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    elapsed = (finish.tv_sec - start.tv_sec);
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+    printf("Sobel time: %fs\n", elapsed);
 
 
-    begin = clock();
+    clock_gettime(CLOCK_MONOTONIC, &start);
     if (save_intermediate) {
         write_image(conv_image_h, filename_conv_h);
         write_image(conv_image_v, filename_conv_v);
     }
     write_image(cont_image, filename_out);
-    time_spent = (double) (clock() - begin) / CLOCKS_PER_SEC;
-    printf("write time: %fs\n", time_spent);
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    elapsed = (finish.tv_sec - start.tv_sec);
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+    printf("write time: %fs\n", elapsed);
 
-    time_spent = (double) (clock() - total_time) / CLOCKS_PER_SEC;
-    printf("\nTotal time: %fs\n", time_spent);
+    clock_gettime(CLOCK_MONOTONIC, &total_time_finish);
+    elapsed = (total_time_finish.tv_sec - total_time_start.tv_sec);
+    elapsed += (total_time_finish.tv_nsec - total_time_start.tv_nsec) / 1000000000.0;
+    printf("\nTotal time: %fs\n", elapsed);
 
     free(in_image->matrix);
     free(in_image);

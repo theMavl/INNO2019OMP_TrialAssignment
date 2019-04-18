@@ -93,7 +93,6 @@ void *process_line(void *arg) {
             process_pixel(x, y);
         }
     }
-    free(arg);
 }
 
 int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_image_t) {
@@ -139,18 +138,18 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
 
     pthread_t threads[THREADS_N];
 
-    convolve_thread_parameters **p = malloc(sizeof(convolve_thread_parameters *) * THREADS_N);
+    convolve_thread_parameters *p = malloc(sizeof(convolve_thread_parameters*) * THREADS_N);
 
     // Allocating structures before starting threads gives boost in performance
     for (int i = 0; i < THREADS_N; i++) {
-        p[i] = malloc(sizeof(convolve_thread_parameters));
-        p[i]->start = image_division * i + 1;
-        p[i]->end = p[i]->start + image_division;
-        if (p[i]->end >= gray_image->height) p[i]->end = gray_image->height - 2;
+        p[i] = *(convolve_thread_parameters *) malloc(sizeof(convolve_thread_parameters));
+        p[i].start = image_division * i + 1;
+        p[i].end = p[i].start + image_division;
+        if (p[i].end >= gray_image->height) p[i].end = gray_image->height - 2;
     }
 
     for (int i = 0; i < THREADS_N; i++) {
-        pthread_create(&threads[i], NULL, process_line, p[i]);
+        pthread_create(&threads[i], NULL, process_line, &p[i]);
     }
 
     for (int i = 0; i < THREADS_N; i++) {
