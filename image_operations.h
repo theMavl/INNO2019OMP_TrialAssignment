@@ -21,13 +21,13 @@ typedef struct _image {
     unsigned int *matrix;
 } image;
 
-typedef struct _convolve_thread_parameters {
-    int start;
-    int end;
-} convolve_thread_parameters;
+typedef struct _thread_parameters {
+    long start;
+    long end;
+} thread_parameters;
 
 
-image *to_gray(image *original_image);
+image *to_gray(image *original_image, image* gray_image_t);
 
 int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_image_t);
 

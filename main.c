@@ -89,7 +89,8 @@ int main(int argc, char *argv[]) {
     printf("load time: %fs\n", elapsed);
 
     clock_gettime(CLOCK_MONOTONIC, &start);
-    image *gray_image = to_gray(in_image);
+    image *gray_image = malloc(sizeof(image));
+    to_gray(in_image, gray_image);
     clock_gettime(CLOCK_MONOTONIC, &finish);
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;

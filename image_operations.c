@@ -22,36 +22,89 @@
 // Global variables for threads
 int kernel_h[] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
 int kernel_v[] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+image *rgb_image;
 image *gray_image;
 image *conv_image_h;
 image *conv_image_v;
 image *cont_image;
 
-image *to_gray(image *original_image) {
+void to_grey_line(long start, long end) {
+    long rgb_ptr;
+    for (long i = start; i < end; i++) {
+        rgb_ptr = i * rgb_image->channels;
+        if (rgb_image->channels == 3) {
+            // Nice grey
+            gray_image->matrix[i] = (unsigned int) round(
+                    0.2989 * rgb_image->matrix[rgb_ptr] + 0.5870 * rgb_image->matrix[rgb_ptr + 1] +
+                    0.1140 * rgb_image->matrix[rgb_ptr + 2]);
+        } else {
+            gray_image->matrix[i] = (unsigned char) round(
+                    (rgb_image->matrix[rgb_ptr] + rgb_image->matrix[rgb_ptr + 1] + rgb_image->matrix[rgb_ptr + 2]) /
+                    (rgb_image->channels * 0.1));
+        }
+    }
+}
+
+void *to_grey_line_wrapper(void *arg) {
+    thread_parameters *p = (thread_parameters *) arg;
+    to_grey_line(p->start, p->end);
+}
+
+image *to_gray(image *original_image, image *gray_image_t) {
+    // Publish global variable
+    gray_image = gray_image_t;
+    rgb_image = original_image;
+
     unsigned long matrix_size = original_image->height * original_image->width;
-    image *gray_image = malloc(sizeof(image));
+
     gray_image->height = original_image->height;
     gray_image->width = original_image->width;
     gray_image->format = P2;
     gray_image->color_range = original_image->color_range;
     gray_image->channels = 1;
     gray_image->matrix = malloc(sizeof(int) * matrix_size);
-    for (int i =0; i < matrix_size; i++)
+    for (int i = 0; i < matrix_size; i++)
         gray_image->matrix[i] = 0;
 
-    unsigned int *rgb_ptr = original_image->matrix;
+    if (THREADS_N == 1) {
+        to_grey_line(0, matrix_size);
+    } else {
+        long image_division = matrix_size / THREADS_N;
+        if (gray_image->height % THREADS_N > 0)
+            image_division++;
 
-    for (int i = 0; i < matrix_size; i++) {
-        gray_image->matrix[i] = (unsigned int) round(
-                0.2989 * rgb_ptr[0] + 0.5870 * rgb_ptr[1] + 0.1140 * rgb_ptr[2]);
-        // gray_image->matrix[i] = (unsigned char) round((rgb_ptr[0] + rgb_ptr[1] + rgb_ptr[2]) / 3.0);
-        rgb_ptr += 3;
+        pthread_t threads[THREADS_N];
+        thread_parameters p[THREADS_N];
+
+        for (int i = 0; i < THREADS_N; i++) {
+            p[i].start = image_division * i;
+            p[i].end = p[i].start + image_division;
+            if (p[i].end > matrix_size) p[i].end = matrix_size;
+        }
+
+        for (int i = 0; i < THREADS_N; i++) {
+            pthread_create(&threads[i], NULL, to_grey_line_wrapper, &p[i]);
+        }
+
+        for (int i = 0; i < THREADS_N; i++) {
+            pthread_join(threads[i], NULL);
+        }
     }
 
+//    for (int i = 0; i < matrix_size; i++) {
+//        if (original_image->channels == 3) {
+//            // Nice grey
+//            gray_image->matrix[i] = (unsigned int) round(
+//                    0.2989 * rgb_ptr[0] + 0.5870 * rgb_ptr[1] + 0.1140 * rgb_ptr[2]);
+//        } else
+//            gray_image->matrix[i] = (unsigned char) round(
+//                    (rgb_ptr[0] + rgb_ptr[1] + rgb_ptr[2]) / (original_image->channels * 0.1));
+//        rgb_ptr += original_image->channels;
+//    }
     return gray_image;
 }
 
-void process_pixel(int x, int y) {
+void process_pixel(long x, long y) {
     int sum_h = 0;
     int sum_v = 0;
     int sum_m = 0;
@@ -87,8 +140,8 @@ void process_pixel(int x, int y) {
     set_matrix_value(sum_m, cont_image, x, y)
 }
 
-void process_line(int start, int end) {
-    for (int x = start; x < end; x++) {
+void process_line(long start, long end) {
+    for (long x = start; x < end; x++) {
         for (int y = 1; y < gray_image->width - 1; y++) {
             process_pixel(x, y);
         }
@@ -96,7 +149,7 @@ void process_line(int start, int end) {
 }
 
 void *process_line_wrapper(void *arg) {
-    convolve_thread_parameters *p = (convolve_thread_parameters *) arg;
+    thread_parameters *p = (thread_parameters *) arg;
     process_line(p->start, p->end);
 }
 
@@ -147,9 +200,8 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
             image_division++;
 
         pthread_t threads[THREADS_N];
-        convolve_thread_parameters p[THREADS_N];
+        thread_parameters p[THREADS_N];
 
-        // Allocating structures before starting threads gives boost in performance
         for (int i = 0; i < THREADS_N; i++) {
             p[i].start = image_division * i + 1;
             p[i].end = p[i].start + image_division;
