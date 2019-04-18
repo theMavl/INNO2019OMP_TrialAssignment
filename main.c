@@ -7,12 +7,17 @@
 #include "fs_operations.h"
 
 int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        printf("Parameters are needed. Use cont --help\n");
+        return 1;
+    }
+
     struct timespec start, finish, total_time_start, total_time_finish;
     double elapsed;
 
     if (strcmp(argv[1], "--help") == 0) {
         printf("SYNOPSIS\n"
-               "\tconv SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMAGE_V] [-f FORMAT]\n\n");
+               "\tcont SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMAGE_V] [-f FORMAT]\n\n");
         printf("OPTIONS\n\t-t threads_n\n\t\tNumber of threads\n\n"
                "\t--abs\n\t\tUse absolute value for approximating gradient instead of square root\n"
                "\t\t(absolute value is faster but might be less accurate)\n\n"
@@ -60,7 +65,7 @@ int main(int argc, char *argv[]) {
                 printf("Unknown format %s. Original format will be kept.\n", argv[arg_n + 1]);
             arg_n++;
         } else {
-            printf("Unknown parameter \"%s\". Use conv --help\n", argv[arg_n]);
+            printf("Unknown parameter \"%s\". Use cont --help\n", argv[arg_n]);
             return 1;
         }
     }
