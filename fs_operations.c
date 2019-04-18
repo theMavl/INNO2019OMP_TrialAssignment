@@ -72,6 +72,10 @@ int load_image(image *image, const char *filename) {
                     image->height = (unsigned int) strtol(buff, end, 10);
                 } else if (image->color_range == 0) {
                     image->color_range = (unsigned int) strtol(buff, end, 10);
+                    if (image->color_range > 65535) {
+                        fprintf(stderr, "Error: Unsupported format (color range is too big)\n");
+                        return 1;
+                    }
                     break;
                 }
                 memset(buff, 0, 8);
@@ -89,6 +93,13 @@ int load_image(image *image, const char *filename) {
 
     if (image->format == P6) {
         // Read pixel data
+
+        // In case of 2-byte color range
+        char extendent_byte = 0;
+        unsigned int tmp_value;
+        if (image->color_range > 255)
+            extendent_byte = 1;
+
         for (int i = 0; i < matrix_size; i++) {
             c = getc(file);
 
@@ -108,7 +119,14 @@ int load_image(image *image, const char *filename) {
             if (c == ' ' || c == '\n') {
                 continue;
             } else {
-                image->matrix[i] = (unsigned int) c;
+                if (extendent_byte) {
+                    // Put 2 subsequent bytes into one matrix cell
+                    tmp_value = (unsigned int) c;
+                    tmp_value = tmp_value << sizeof(char) * 8;
+                    tmp_value += c;
+                    image->matrix[i] = tmp_value;
+                } else
+                    image->matrix[i] = (unsigned int) c;
             }
         }
     } else if (image->format == P3) {
@@ -173,10 +191,22 @@ int write_image(image *out_image, const char *filename) {
             }
             break;
         case P6:
-            for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
-                // TODO: No cycle
-                for (int j = out_image->channels; j <= 3; j++)
-                    fprintf(file, "%c", out_image->matrix[i]);
+            if (out_image->color_range <= 255) {
+                for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
+                    for (int j = out_image->channels; j <= 3; j++) {
+                        fprintf(file, "%c", out_image->matrix[i]);
+                    }
+                }
+            } else {
+                // 2-byte color range
+                unsigned char g[2];
+                for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
+                    for (int j = out_image->channels; j <= 3; j++) {
+                        g[0] = out_image->matrix[i] >> 8;
+                        g[1] = (unsigned char) out_image->matrix[i];
+                        fprintf(file, "%c%c", g[0], g[1]);
+                    }
+                }
             }
             break;
         default:

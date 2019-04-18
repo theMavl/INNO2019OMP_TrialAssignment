@@ -147,12 +147,10 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
             image_division++;
 
         pthread_t threads[THREADS_N];
-
-        convolve_thread_parameters *p = malloc(sizeof(convolve_thread_parameters *) * THREADS_N);
+        convolve_thread_parameters p[THREADS_N];
 
         // Allocating structures before starting threads gives boost in performance
         for (int i = 0; i < THREADS_N; i++) {
-            p[i] = *(convolve_thread_parameters *) malloc(sizeof(convolve_thread_parameters));
             p[i].start = image_division * i + 1;
             p[i].end = p[i].start + image_division;
             if (p[i].end >= gray_image->height) p[i].end = gray_image->height - 2;
@@ -165,8 +163,6 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
         for (int i = 0; i < THREADS_N; i++) {
             pthread_join(threads[i], NULL);
         }
-
-        free(p);
     }
     return 0;
 }
