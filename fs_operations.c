@@ -36,8 +36,8 @@ int load_image(image *image, const char *filename) {
 
     if (c == '3') {
         image->format = P3;
-        fprintf(stderr, "Error: Unsupported format (P3)");
-        return 3;
+        image->format = P3;
+        image->channels = 3;
     } else if (c == '6') {
         image->format = P6;
         image->channels = 3;
@@ -71,7 +71,7 @@ int load_image(image *image, const char *filename) {
                 } else if (image->height == 0) {
                     image->height = (unsigned int) strtol(buff, end, 10);
                 } else if (image->color_range == 0) {
-                    image->color_range = (unsigned char) strtol(buff, end, 10);
+                    image->color_range = (unsigned int) strtol(buff, end, 10);
                     break;
                 }
                 memset(buff, 0, 8);
@@ -85,32 +85,64 @@ int load_image(image *image, const char *filename) {
     }
     free(end);
     long matrix_size = image->height * image->width * 3;
-    image->matrix = malloc(sizeof(char) * matrix_size);
+    image->matrix = malloc(sizeof(int) * matrix_size);
 
+    if (image->format == P6) {
+        // Read pixel data
+        for (int i = 0; i < matrix_size; i++) {
+            c = getc(file);
 
+            // Skip remaining comments that are after the header
+            if (!header_is_done && c == '#') {
+                do {
+                    c = getc(file);
+                } while (c != '\n');
+            }
+            header_is_done = 1;
 
-    // Read pixel data
-    for (int i = 0; i < matrix_size; i++) {
-        c = getc(file);
+            if (c == EOF) {
+                fprintf(stderr, "Unexpected End of File\n");
+                return 2;
+            }
 
-        // Skip remaining comments that are after the header
-        if (!header_is_done && c == '#') {
-            do {
-                c = getc(file);
-            } while (c != '\n');
+            if (c == ' ' || c == '\n') {
+                continue;
+            } else {
+                image->matrix[i] = (unsigned int) c;
+            }
         }
-        header_is_done = 1;
+    } else if (image->format == P3) {
+        buff_ptr = 0;
+        found = 0;
+        memset(buff, 0, 8);
+        int matrix_ptr = 0;
 
-        if (c == EOF) {
-            fprintf(stderr, "Unexpected End of File\n");
-            return 2;
+        while (matrix_ptr < matrix_size) {
+            c = getc(file);
+
+            // Skip remaining comments that are after the header
+            if (!header_is_done && c == '#') {
+                do {
+                    c = getc(file);
+                } while (c != '\n');
+            }
+            header_is_done = 1;
+
+            if (c == ' ' || c == '\n') {
+                if (found) {
+                    image->matrix[matrix_ptr] = (unsigned int) strtol(buff, end, 10);
+                    memset(buff, 0, 8);
+                    buff_ptr = 0;
+                    found = 0;
+                    matrix_ptr++;
+                }
+            } else {
+                found = 1;
+                buff[buff_ptr] = (char) c;
+                buff_ptr++;
+            }
         }
 
-        if (c == ' ' || c == '\n') {
-            continue;
-        } else {
-            image->matrix[i] = (unsigned char) c;
-        }
     }
     return 0;
 }
@@ -122,13 +154,27 @@ int write_image(image *out_image, const char *filename) {
         fprintf(stderr, "I/O error\n");
         return 2;
     }
+    fprintf(file, "P%d\n%d %d\n%d\n", out_image->format, out_image->width, out_image->height,
+            out_image->color_range);
+    int real_outputs = 0;
     switch (out_image->format) {
-//        case P3:
-//            break;
-        case P6:
-            fprintf(file, "P%d\n%d %d\n%d\n", out_image->format, out_image->width, out_image->height,
-                    out_image->color_range);
+        case P3:
             for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
+                for (int j = out_image->channels; j <= 3; j++) {
+                    fprintf(file, "%d ", out_image->matrix[i]);
+                    real_outputs += abs(out_image->channels - 3) + 1;
+                }
+                if (real_outputs % out_image->channels == 0) {
+                    if (real_outputs * out_image->channels % out_image->width == 0)
+                        fprintf(file, "\n");
+                    else
+                        fprintf(file, "\t");
+                }
+            }
+            break;
+        case P6:
+            for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
+                // TODO: No cycle
                 for (int j = out_image->channels; j <= 3; j++)
                     fprintf(file, "%c", out_image->matrix[i]);
             }

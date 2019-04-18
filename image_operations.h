@@ -16,9 +16,9 @@ typedef struct _image {
     unsigned char format;
     unsigned int width;
     unsigned int height;
-    unsigned char color_range;
-    unsigned char *matrix;
+    unsigned int color_range;
     unsigned char channels;
+    unsigned int *matrix;
 } image;
 
 typedef struct _convolve_thread_parameters {

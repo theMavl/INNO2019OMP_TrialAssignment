@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <string.h>
 
 #define get_matrix_value(_value, _image, _x, _y) do { \
     _value = _image->matrix[(_x)*_image->width+(_y)];\
@@ -27,21 +28,21 @@ image *conv_image_v;
 image *cont_image;
 
 image *to_gray(image *original_image) {
+    unsigned long matrix_size = original_image->height * original_image->width;
     image *gray_image = malloc(sizeof(image));
     gray_image->height = original_image->height;
     gray_image->width = original_image->width;
-    gray_image->format = original_image->format;
+    gray_image->format = P2;
     gray_image->color_range = original_image->color_range;
     gray_image->channels = 1;
+    gray_image->matrix = malloc(sizeof(int) * matrix_size);
+    for (int i =0; i < matrix_size; i++)
+        gray_image->matrix[i] = 0;
 
-    long matrix_size = gray_image->height * gray_image->width;
-
-    gray_image->matrix = malloc(sizeof(char) * matrix_size);
-
-    unsigned char *rgb_ptr = original_image->matrix;
+    unsigned int *rgb_ptr = original_image->matrix;
 
     for (int i = 0; i < matrix_size; i++) {
-        gray_image->matrix[i] = (unsigned char) round(
+        gray_image->matrix[i] = (unsigned int) round(
                 0.2989 * rgb_ptr[0] + 0.5870 * rgb_ptr[1] + 0.1140 * rgb_ptr[2]);
         // gray_image->matrix[i] = (unsigned char) round((rgb_ptr[0] + rgb_ptr[1] + rgb_ptr[2]) / 3.0);
         rgb_ptr += 3;
@@ -86,13 +87,17 @@ void process_pixel(int x, int y) {
     set_matrix_value(sum_m, cont_image, x, y)
 }
 
-void *process_line(void *arg) {
-    convolve_thread_parameters *p = (convolve_thread_parameters *) arg;
-    for (int x = p->start; x < p->end; x++) {
+void process_line(int start, int end) {
+    for (int x = start; x < end; x++) {
         for (int y = 1; y < gray_image->width - 1; y++) {
             process_pixel(x, y);
         }
     }
+}
+
+void *process_line_wrapper(void *arg) {
+    convolve_thread_parameters *p = (convolve_thread_parameters *) arg;
+    process_line(p->start, p->end);
 }
 
 int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_image_t) {
@@ -115,14 +120,14 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
         conv_image_h->format = gray_image->format;
         conv_image_h->color_range = gray_image->color_range;
         conv_image_h->channels = 1;
-        conv_image_h->matrix = malloc(sizeof(char) * matrix_size);
+        conv_image_h->matrix = malloc(sizeof(int) * matrix_size);
 
         conv_image_v->height = gray_image->height;
         conv_image_v->width = gray_image->width;
         conv_image_v->format = gray_image->format;
         conv_image_v->color_range = gray_image->color_range;
         conv_image_v->channels = 1;
-        conv_image_v->matrix = malloc(sizeof(char) * matrix_size);
+        conv_image_v->matrix = malloc(sizeof(int) * matrix_size);
     }
 
     cont_image->height = gray_image->height;
@@ -130,33 +135,39 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
     cont_image->format = gray_image->format;
     cont_image->color_range = gray_image->color_range;
     cont_image->channels = 1;
-    cont_image->matrix = malloc(sizeof(char) * matrix_size);
+    cont_image->matrix = malloc(sizeof(int) * matrix_size);
+    memset(cont_image->matrix, 0, sizeof(char) * matrix_size);
 
-    int image_division = gray_image->height / THREADS_N;
-    if (gray_image->height % THREADS_N > 0)
-        image_division++;
+    if (THREADS_N == 1) {
+        process_line(1, gray_image->height - 1);
+    } else {
 
-    pthread_t threads[THREADS_N];
+        int image_division = gray_image->height / THREADS_N;
+        if (gray_image->height % THREADS_N > 0)
+            image_division++;
 
-    convolve_thread_parameters *p = malloc(sizeof(convolve_thread_parameters*) * THREADS_N);
+        pthread_t threads[THREADS_N];
 
-    // Allocating structures before starting threads gives boost in performance
-    for (int i = 0; i < THREADS_N; i++) {
-        p[i] = *(convolve_thread_parameters *) malloc(sizeof(convolve_thread_parameters));
-        p[i].start = image_division * i + 1;
-        p[i].end = p[i].start + image_division;
-        if (p[i].end >= gray_image->height) p[i].end = gray_image->height - 2;
+        convolve_thread_parameters *p = malloc(sizeof(convolve_thread_parameters *) * THREADS_N);
+
+        // Allocating structures before starting threads gives boost in performance
+        for (int i = 0; i < THREADS_N; i++) {
+            p[i] = *(convolve_thread_parameters *) malloc(sizeof(convolve_thread_parameters));
+            p[i].start = image_division * i + 1;
+            p[i].end = p[i].start + image_division;
+            if (p[i].end >= gray_image->height) p[i].end = gray_image->height - 2;
+        }
+
+        for (int i = 0; i < THREADS_N; i++) {
+            pthread_create(&threads[i], NULL, process_line_wrapper, &p[i]);
+        }
+
+        for (int i = 0; i < THREADS_N; i++) {
+            pthread_join(threads[i], NULL);
+        }
+
+        free(p);
     }
-
-    for (int i = 0; i < THREADS_N; i++) {
-        pthread_create(&threads[i], NULL, process_line, &p[i]);
-    }
-
-    for (int i = 0; i < THREADS_N; i++) {
-        pthread_join(threads[i], NULL);
-    }
-
-    free(p);
     return 0;
 }
 
