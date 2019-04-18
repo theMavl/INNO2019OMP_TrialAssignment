@@ -205,7 +205,7 @@ int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_
         for (int i = 0; i < THREADS_N; i++) {
             p[i].start = image_division * i + 1;
             p[i].end = p[i].start + image_division;
-            if (p[i].end >= gray_image->height) p[i].end = gray_image->height - 2;
+            if (p[i].end >= gray_image->height) p[i].end = gray_image->height - 1;
         }
 
         for (int i = 0; i < THREADS_N; i++) {

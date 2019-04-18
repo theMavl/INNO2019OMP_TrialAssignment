@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-    printf("load time: %fs\n", elapsed);
+    printf("load time:\t%fs\n", elapsed);
 
     clock_gettime(CLOCK_MONOTONIC, &start);
     image *gray_image = malloc(sizeof(image));
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
         conv_image_v = malloc(sizeof(image));
     }
     image *cont_image = malloc(sizeof(image));
-    cont_image->matrix = malloc(sizeof(char) * in_image->height * in_image->width);
+    cont_image->matrix = malloc(sizeof(unsigned int) * in_image->height * in_image->width);
 
     clock_gettime(CLOCK_MONOTONIC, &start);
     sobel(gray_image, conv_image_h, conv_image_v, cont_image);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
-    printf("Sobel time: %fs\n", elapsed);
+    printf("Sobel time:\t%fs\n", elapsed);
 
     clock_gettime(CLOCK_MONOTONIC, &start);
     if (save_intermediate) {
@@ -128,12 +128,12 @@ int main(int argc, char *argv[]) {
     clock_gettime(CLOCK_MONOTONIC, &finish);
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-    printf("write time: %fs\n", elapsed);
+    printf("write time:\t%fs\n", elapsed);
 
     clock_gettime(CLOCK_MONOTONIC, &total_time_finish);
     elapsed = (total_time_finish.tv_sec - total_time_start.tv_sec);
     elapsed += (total_time_finish.tv_nsec - total_time_start.tv_nsec) / 1000000000.0;
-    printf("\nTotal time: %fs\n", elapsed);
+    printf("\nTotal time:\t%fs\n", elapsed);
 
     free(in_image->matrix);
     free(in_image);
