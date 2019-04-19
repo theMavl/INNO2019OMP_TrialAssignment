@@ -37,7 +37,7 @@ Usage: `cont SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMA
 
 Open the file by `...` button. Application can view any images, but **only PPM can be converted to contour**.
 
-You can zoom the image by wheel scrolling as well as pan it using your mouse.
+You can zoom the image by **scrolling mouse wheel** as well as pan it using your mouse.
 
 GUI allows you to set all the settings that CLI provide, except the destination path. For simplicity, 
 you need only set the filename **postfix**, so that the destination image will be stored in the same folder 
