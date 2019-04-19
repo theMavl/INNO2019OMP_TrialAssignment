@@ -23,8 +23,7 @@ int main(int argc, char *argv[]) {
                "\t\t(absolute value is faster but might be less accurate)\n\n"
                "\t-i DEST_IMAGE_H DEST_IMAGE_V\n\t\tSave intermediate images, i.e. the results of horizontal and vertical\n"
                "\t\tconvolutions\n\n"
-               "\t-f FORMAT\n\t\tOutput format (P3 and P6 are supported). By default it will save the image in original format.\n"
-               "\t\tconvolutions\n");
+               "\t-f FORMAT\n\t\tOutput format (P3 and P6 are supported). By default it will save the image in original format.\n");
         return 0;
     }
 
