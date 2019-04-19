@@ -111,6 +111,8 @@ void MainWindow::on_btnSave_clicked()
 
     process.start("../cli/cont", args);
 
+    ui->statusBar->showMessage("Working. Please wait...");
+
     process.waitForFinished(100000);
 
     if (process.exitCode() != 0) {
