@@ -12,7 +12,7 @@ More can be found [here](https://github.com/theMavl/INNO2019OMP_TrialAssignment/
 ## Running
 There are 2 versions: command-line and GUI that runs command-line app
 
-Run `make` in the to compile both of them
+Run `make` in the to compile both of them. Note, that GUI requires `qt5-default` package. Run `make` in `cli` directory if you want only CLI to be compiled.
 
 Run `make run` to open GUI application.
 
