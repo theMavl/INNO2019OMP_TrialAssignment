@@ -9,6 +9,13 @@
 #include "image_operations.h"
 #include "fs_operations.h"
 
+/**
+ * Read PPM image
+ * @param image location where to read image (has to be allocated)
+ * @param filename file to load
+ * @return 0 on success, 1 if given file can not be opened (error description is printed to stderr),
+ * 2 if Unexpected end Of File encountered
+ */
 int load_image(image *image, const char *filename) {
     image->width = 0;
     image->height = 0;
@@ -25,7 +32,7 @@ int load_image(image *image, const char *filename) {
 
     int c;
 
-    // Parse header
+    // ------------ Parse header ------------
     c = getc(file);
     if (c != 'P') {
         fprintf(stderr, "Error: failed to parse PPM");
@@ -88,12 +95,13 @@ int load_image(image *image, const char *filename) {
         }
     }
     free(end);
+    // ------------ End of parsing header ------------
+
     long matrix_size = image->height * image->width * 3;
     image->matrix = malloc(sizeof(int) * matrix_size);
 
+    // ------------ Read pixel data ------------
     if (image->format == P6) {
-        // Read pixel data
-
         // In case of 2-byte color range
         char extendent_byte = 0;
         unsigned int tmp_value;
@@ -115,7 +123,6 @@ int load_image(image *image, const char *filename) {
                 fprintf(stderr, "Unexpected End of File\n");
                 return 2;
             }
-
             if (c == ' ' || c == '\n') {
                 continue;
             } else {
@@ -160,11 +167,17 @@ int load_image(image *image, const char *filename) {
                 buff_ptr++;
             }
         }
-
     }
+    // ------------ End of Reading pixel data ------------
     return 0;
 }
 
+/**
+ * Write PPM image
+ * @param out_image image to save
+ * @param filename destimation path
+ * @return 0 on success, 1 if output format is not supported, 2 if I/O error on creating destination file
+ */
 int write_image(image *out_image, const char *filename) {
     FILE *file = fopen(filename, "w");
 
@@ -174,7 +187,7 @@ int write_image(image *out_image, const char *filename) {
     }
     fprintf(file, "P%d\n%d %d\n%d\n", out_image->format, out_image->width, out_image->height,
             out_image->color_range);
-    int real_outputs = 0;
+    int real_outputs = 0; // Calculate how much values has been written so far (used in P3 for nice formatting)
     switch (out_image->format) {
         case P3:
             for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
@@ -202,7 +215,7 @@ int write_image(image *out_image, const char *filename) {
                 unsigned char g[2];
                 for (int i = 0; i < out_image->width * out_image->height * out_image->channels; i++) {
                     for (int j = out_image->channels; j <= 3; j++) {
-                        g[0] = out_image->matrix[i] >> 8;
+                        g[0] = out_image->matrix[i] >> 8; // It is okay, the most signifiats bits are supposed to be zeros
                         g[1] = (unsigned char) out_image->matrix[i];
                         fprintf(file, "%c%c", g[0], g[1]);
                     }

@@ -12,9 +12,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    struct timespec start, finish, total_time_start, total_time_finish;
-    double elapsed;
-
     if (strcmp(argv[1], "--help") == 0) {
         printf("SYNOPSIS\n"
                "\tcont SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMAGE_V] [-f FORMAT]\n\n");
@@ -27,6 +24,11 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    // Benchmarks
+    struct timespec start, finish, total_time_start, total_time_finish;
+    double elapsed;
+
+    // Parameters initialization
     MODE = 0;       // Square root
     THREADS_N = 1;  // Single thread
     save_intermediate = 0;
@@ -35,7 +37,7 @@ int main(int argc, char *argv[]) {
     char *filename_in = argv[1];
     char *filename_out = argv[2];
 
-    // Intermediate images (if user wants them to be saved)
+    // Intermediate images (used only if user wants them to be saved)
     char *filename_conv_h;
     char *filename_conv_v;
     image *conv_image_h;
@@ -71,22 +73,22 @@ int main(int argc, char *argv[]) {
 
     clock_gettime(CLOCK_MONOTONIC, &total_time_start);
 
+    // Load image
     image *in_image = malloc(sizeof(image));
-
     clock_gettime(CLOCK_MONOTONIC, &start);
     if (load_image(in_image, filename_in) != 0) {
         return 1;
     }
-
     clock_gettime(CLOCK_MONOTONIC, &finish);
-
-    if (output_format == 0)
-        output_format = in_image->format;
-
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("load time:\t%fs\n", elapsed);
 
+
+    if (output_format == 0)
+        output_format = in_image->format;
+
+    // Convert rgb to gray
     clock_gettime(CLOCK_MONOTONIC, &start);
     image *gray_image = malloc(sizeof(image));
     to_gray(in_image, gray_image);
@@ -102,17 +104,15 @@ int main(int argc, char *argv[]) {
     image *cont_image = malloc(sizeof(image));
     cont_image->matrix = malloc(sizeof(unsigned int) * in_image->height * in_image->width);
 
+    // Sobel
     clock_gettime(CLOCK_MONOTONIC, &start);
     sobel(gray_image, conv_image_h, conv_image_v, cont_image);
-
     clock_gettime(CLOCK_MONOTONIC, &finish);
-
     elapsed = (finish.tv_sec - start.tv_sec);
-
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-
     printf("Sobel time:\t%fs\n", elapsed);
 
+    // Write
     clock_gettime(CLOCK_MONOTONIC, &start);
     if (save_intermediate) {
         conv_image_h->format = output_format;
@@ -120,15 +120,14 @@ int main(int argc, char *argv[]) {
         write_image(conv_image_h, filename_conv_h);
         write_image(conv_image_v, filename_conv_v);
     }
-
     cont_image->format = output_format;
-
     write_image(cont_image, filename_out);
     clock_gettime(CLOCK_MONOTONIC, &finish);
     elapsed = (finish.tv_sec - start.tv_sec);
     elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("write time:\t%fs\n", elapsed);
 
+    // Total time
     clock_gettime(CLOCK_MONOTONIC, &total_time_finish);
     elapsed = (total_time_finish.tv_sec - total_time_start.tv_sec);
     elapsed += (total_time_finish.tv_nsec - total_time_start.tv_nsec) / 1000000000.0;

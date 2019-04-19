@@ -27,7 +27,7 @@ typedef struct _thread_parameters {
 } thread_parameters;
 
 
-image *to_gray(image *original_image, image* gray_image_t);
+void to_gray(image *original_image, image* gray_image_t);
 
 int sobel(image *image_s, image *conv_image_1, image *conv_image_2, image *cont_image_t);
 
