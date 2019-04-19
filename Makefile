@@ -1,17 +1,6 @@
-FILES=image_operations.h image_operations.c fs_operations.c fs_operations.h main.c
-OBJS=$(FILES:.c=.o)
-ARQUIVE=libcont.a
-EXE=cont
-FLAGS=-std=c99 -pthread -lm
+all:
+	cd gui && /usr/bin/qmake -o Makefile cont.pro -spec linux-g++ CONFIG+=qtquickcompiler && make
+	cd cli && make
 
-all: $(OBJS) archive
-	gcc $(OBJS) -o $(EXE) $(FLAGS)
-
-.c.o:
-	gcc -c $< -o $@ $(FLAGS)
-
-archive:
-	ar rcs $(ARQUIVE) $(OBJS)
-
-clean:
-	rm $(OBJS) $(ARQUIVE) $(EXE)
+run:
+	cd gui && ./cont

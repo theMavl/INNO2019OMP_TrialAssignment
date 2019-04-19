@@ -78,9 +78,9 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 void MainWindow::on_btnSave_clicked()
 {
     struct stat buffer;
-    if (stat ("./cont_cli", &buffer) != 0) {
+    if (stat ("../cli/cont", &buffer) != 0) {
         QMessageBox::critical(this, "Contour Highlighter", "Executable cont_cli is not found in this folder!");
-        ui->statusBar->showMessage("Executable cont_cli is not found in this folder!");
+        ui->statusBar->showMessage("Executable ../cli/cont is not found in this folder!");
         return;
     }
 
@@ -109,7 +109,7 @@ void MainWindow::on_btnSave_clicked()
     if (threads_n > 1)
         args << "-t" << ui->txtThreads->text();
 
-    process.start("./cont_cli", args);
+    process.start("../cli/cont", args);
 
     process.waitForFinished(100000);
 
