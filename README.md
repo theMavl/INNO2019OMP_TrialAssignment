@@ -12,7 +12,7 @@ More can be found [here](https://github.com/theMavl/INNO2019OMP_TrialAssignment/
 ## Running
 There are 2 versions: command-line and GUI that runs command-line app
 
-Run `make` in the to compile both of them. Note, that GUI requires `qt5-default` package. Run `make` in `cli` directory if you want only CLI to be compiled.
+Run `make` to compile both of them. Note, that GUI requires `qt5-default` package installed. Run `make` in `cli` directory if you want only CLI to be compiled.
 
 Run `make run` to open GUI application.
 
@@ -35,7 +35,7 @@ Usage: `cont SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMA
 ## GUI
 ![GUI](https://github.com/theMavl/INNO2019OMP_TrialAssignment/blob/master/readme_pics/cat_gui.png)
 
-Open the file by `...` button. Application can view any images, but **only PPM can be converted to contour**.
+Open the file by `...` button. Application can view any images, but the application can convert the contour of **PPM images only**.
 
 You can zoom the image by **scrolling mouse wheel** as well as pan it using your mouse.
 
