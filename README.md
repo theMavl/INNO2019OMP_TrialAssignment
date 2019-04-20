@@ -35,7 +35,7 @@ Usage: `cont SOURCE DESTINATION [-t threads_n] [--abs] [-i DEST_IMAGE_H DEST_IMA
 ## GUI
 ![GUI](https://github.com/theMavl/INNO2019OMP_TrialAssignment/blob/master/readme_pics/cat_gui.png)
 
-Open the file by `...` button. Application can view any images, but the application can convert the contour of **PPM images only**.
+Open the file by `...` button. Application can view any images, but the application can generate the contour of **PPM images only**.
 
 You can zoom the image by **scrolling mouse wheel** as well as pan it using your mouse.
 
