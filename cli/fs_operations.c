@@ -43,7 +43,6 @@ int load_image(image *image, const char *filename) {
 
     if (c == '3') {
         image->format = P3;
-        image->format = P3;
         image->channels = 3;
     } else if (c == '6') {
         image->format = P6;
@@ -175,7 +174,7 @@ int load_image(image *image, const char *filename) {
 /**
  * Write PPM image
  * @param out_image image to save
- * @param filename destimation path
+ * @param filename destination path
  * @return 0 on success, 1 if output format is not supported, 2 if I/O error on creating destination file
  */
 int write_image(image *out_image, const char *filename) {

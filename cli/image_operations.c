@@ -30,35 +30,39 @@ image *conv_image_v;
 image *cont_image;
 
 /**
- * Convert specified lines of an image to grayscale
+ * Convert specified lines of the rgb_image to grayscale and store in gray_image
  * @param start start line index
  * @param end finish line index
  */
-void to_grey_line(long start, long end) {
+void to_gray_line(long start, long end) {
     long rgb_ptr;
+    int gray_value = 0;
     for (long i = start; i < end; i++) {
         rgb_ptr = i * rgb_image->channels;
         if (rgb_image->channels == 3) {
-            // Nice grey
+            // Nice gray
             gray_image->matrix[i] = (unsigned int) round(
                     0.2989 * rgb_image->matrix[rgb_ptr] + 0.5870 * rgb_image->matrix[rgb_ptr + 1] +
                     0.1140 * rgb_image->matrix[rgb_ptr + 2]);
         } else {
-            gray_image->matrix[i] = (unsigned char) round(
-                    (rgb_image->matrix[rgb_ptr] + rgb_image->matrix[rgb_ptr + 1] + rgb_image->matrix[rgb_ptr + 2]) /
-                    (rgb_image->channels * 0.1));
+            // Average of all channels
+            gray_value = 0;
+            for (int j = 0; j < rgb_image->channels; j++) {
+                gray_value += rgb_image->matrix[rgb_ptr + i];
+            }
+            gray_image->matrix[i] = (unsigned char) round(gray_value / (rgb_image->channels * 0.1));
         }
     }
 }
 
 
 /**
- * Wrapper for multi-threaded converting rgb to grayscale lines of image
+ * Wrapper for multi-threaded converting specified rgb_image lines to gray_image lines
  * @param arg start and end line indexes in thread_parameters
  */
-void *to_grey_line_wrapper(void *arg) {
+void *to_gray_line_wrapper(void *arg) {
     thread_parameters *p = (thread_parameters *) arg;
-    to_grey_line(p->start, p->end);
+    to_gray_line(p->start, p->end);
 }
 
 /**
@@ -82,7 +86,7 @@ void to_gray(image *original_image, image *gray_image_t) {
         gray_image->matrix[i] = 0;
 
     if (THREADS_N == 1) {
-        to_grey_line(0, matrix_size);
+        to_gray_line(0, matrix_size);
     } else {
         long image_division = matrix_size / THREADS_N;
 
@@ -99,7 +103,7 @@ void to_gray(image *original_image, image *gray_image_t) {
         }
 
         for (int i = 0; i < THREADS_N; i++) {
-            pthread_create(&threads[i], NULL, to_grey_line_wrapper, &p[i]);
+            pthread_create(&threads[i], NULL, to_gray_line_wrapper, &p[i]);
         }
 
         for (int i = 0; i < THREADS_N; i++) {
